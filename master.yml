@@ -223,6 +223,16 @@ Resources:
       VpcId:
         Ref: Vpc
       SecurityGroupIngress:
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp:
+            Ref: TunnelInsideCidr1
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp:
+            Ref: TunnelInsideCidr2
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
@@ -245,6 +255,36 @@ Resources:
       VpcId:
         Ref: Vpc
       SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp:
+            Ref: TunnelInsideCidr1
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp:
+            Ref: TunnelInsideCidr2
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp:
+            Ref: TunnelInsideCidr1
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp:
+            Ref: TunnelInsideCidr2
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp:
+            Ref: TunnelInsideCidr1
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp:
+            Ref: TunnelInsideCidr2
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
@@ -278,10 +318,10 @@ Resources:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 10
-      HealthCheckProtocol: HTTPS
+      HealthCheckProtocol: HTTP
       Port:
         Ref: ApplicationPort
-      Protocol: HTTPS
+      Protocol: HTTP
       UnhealthyThresholdCount: 2
       HealthyThresholdCount: 2
       VpcId:
