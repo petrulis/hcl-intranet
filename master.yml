@@ -11,6 +11,9 @@ Parameters:
   TunnelInsideCidr2:
     Type: String
     Default: 169.254.7.0/30
+  HostedZoneName:
+    Type: String
+    Default: hcl.intranet
   ApplicationPort:
     Type: Number
     Default: 443
@@ -79,6 +82,11 @@ Parameters:
       - db.m1.xlarge
       - db.m2.xlarge
     ConstraintDescription: must select a valid database instance type.
+  DirectoryPassword:
+    Type: String
+    Default: Password1234++
+    Description: >-
+      SimpelAD directory password. SimpleAD is used to resolve private DNS hostnames.
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -92,6 +100,7 @@ Metadata:
       - Label:
           default: Application configuration
         Parameters:
+          - HostedZoneName
           - ApplicationPort
           - CertificateArn
           - SpotPrice
@@ -256,26 +265,6 @@ Resources:
         Ref: Vpc
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp:
-            Ref: TunnelInsideCidr1
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp:
-            Ref: TunnelInsideCidr2
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp:
-            Ref: TunnelInsideCidr1
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp:
-            Ref: TunnelInsideCidr2
-        - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           CidrIp:
@@ -322,11 +311,11 @@ Resources:
       Port:
         Ref: ApplicationPort
       Protocol: HTTP
-      UnhealthyThresholdCount: 2
-      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      HealthyThresholdCount: 3
       VpcId:
         Ref: Vpc
-  Listener:
+  HttpsListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
@@ -340,6 +329,7 @@ Resources:
       Certificates:
         - CertificateArn:
             Ref: CertificateArn
+      SslPolicy: ELBSecurityPolicy-2016-08
   ParameterGroup:
     Type: 'AWS::RDS::DBParameterGroup'
     Properties:
@@ -478,6 +468,51 @@ Resources:
           PredefinedMetricType: ASGAverageCPUUtilization
         TargetValue:
           Ref: TargetTrackingValue
+  HostedZone:
+    Type: 'AWS::Route53::HostedZone'
+    Properties:
+      Name:
+        Ref: HostedZoneName
+      VPCs:
+        - VPCId:
+            Ref: Vpc
+          VPCRegion:
+            Fn::Sub: ${AWS::Region}
+      HostedZoneConfig:
+        Comment: HCL intranet zone
+  RecordSet:
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      Name:
+        Ref: HostedZoneName
+      HostedZoneId:
+        Ref: HostedZone
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+            - LoadBalancer
+            - DNSName
+        EvaluateTargetHealth: true
+        HostedZoneId:
+          Fn::GetAtt:
+            - LoadBalancer
+            - CanonicalHostedZoneID
+  Directory:
+    Type: 'AWS::DirectoryService::SimpleAD'
+    Properties:
+      Name:
+        Fn::Sub: ${AWS::StackName}.com
+      Description: Directory service used to resolve private DNS names
+      Password:
+        Ref: DirectoryPassword
+      Size: Small
+      VpcSettings:
+        VpcId:
+          Ref: Vpc
+        SubnetIds:
+          - Ref: PrivateSubnetA
+          - Ref: PrivateSubnetB
 Outputs:
   VpcId:
     Value:
@@ -509,3 +544,27 @@ Outputs:
     Export:
       Name:
         Fn::Sub: '${AWS::StackName}-PrivateSubnetC'
+  DnsIpAdddresses:
+    Value:
+      Fn::Join:
+        - ','
+        -
+          - Fn::Select:
+              - 0
+              - Fn::GetAtt:
+                - Directory
+                - DnsIpAddresses
+          - Fn::Select:
+              - 1
+              - Fn::GetAtt:
+                - Directory
+                - DnsIpAddresses
+    Export:
+      Name:
+        Fn::Sub: '${AWS::StackName}-DnsIpAddresses'
+  Hostname:
+    Value:
+      Ref: HostedZoneName
+    Export:
+      Name:
+        Fn::Sub: '${AWS::StackName}-Hostname'
