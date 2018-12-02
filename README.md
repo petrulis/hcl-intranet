@@ -105,7 +105,7 @@ This guide is only relevant for Linux environments with strongswan.
 
 7. To establish private connectivity between your on-premises network and VPC the need for DNS resolution accross these
 environments were solved by creating SimpleAD directory service. When connected to VPC SimpleAD provides two
-DNS addresses which have to be added to you DNS forwarder (if you control your on-promise DNS service) or etc/resolve.conf at your customer gateway part.
+DNS addresses which have to be added to you DNS forwarder (if you control your on-promise DNS service) or /etc/resolve.conf at your customer gateway part.
 	```console
 	nameserver <IP_1>
 	nameserver <IP_2>
