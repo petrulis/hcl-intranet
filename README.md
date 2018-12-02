@@ -34,13 +34,17 @@ This guide is only relevant for Linux environments with strongswan.
 ### Enable Packet Forwarding and Configure the Tunnel
 
 1. Install strongswan
+	```console
 	sudo apt-get install strongswan
-
+	```
 2. Open /etc/sysctl.conf and uncomment the following line to enable IP packet forwarding:
+	```console
    net.ipv4.ip_forward = 1
+   ```
 
 3. Create ipsec conf file at /etc/ipsec.conf
 
+	```console
 	conn Tunnel1
 		auto=start
 		left=%defaultroute
@@ -62,7 +66,8 @@ This guide is only relevant for Linux environments with strongswan.
 		dpdaction=restart
 		mark=100
 		leftupdown="/etc/ipsec.d/aws-updown.sh -ln Tunnel1 -ll 169.254.6.2/30 -lr 169.254.6.1/30 -m 100 -r <VPC CIDR>"
-
+		```
+	```console
 	conn Tunnel2
 		auto=start
 		left=%defaultroute
@@ -83,11 +88,16 @@ This guide is only relevant for Linux environments with strongswan.
 		dpdtimeout=30s
 		dpdaction=restart
 		leftupdown="/etc/ipsec.d/aws-updown.sh -ln Tunnel1 -ll 169.254.7.2/30 -lr 169.254.7.1/30 -m 100 -r <VPC CIDR>"
-
+		```
 4) Create a new file at /etc/ipsec.secrets if it doesn't already exist, and append this line to the file. This value authenticates the tunnel endpoints:
-<PUBLIC_IP> <TUNNEL1_OUTSIDE_IP> : PSK "<SECRET1>"
-<PUBLIC_IP> <TUNNEL1_OUTSIDE_IP> : PSK "<SECRET2>"
+	```console
+	<PUBLIC_IP> <TUNNEL1_OUTSIDE_IP> : PSK "<SECRET1>"
+	<PUBLIC_IP> <TUNNEL1_OUTSIDE_IP> : PSK "<SECRET2>"
+	```
 
 5. Create a file at /etc/ipsec.d/aws-updown.sh and append file contents from aws-updown.sh.
 
-6. sudo sysctl -p && ipsec restart
+6. Restart ipsec
+	```console
+	sudo sysctl -p && ipsec restart
+	```
