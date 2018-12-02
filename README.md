@@ -66,8 +66,7 @@ This guide is only relevant for Linux environments with strongswan.
 		dpdaction=restart
 		mark=100
 		leftupdown="/etc/ipsec.d/aws-updown.sh -ln Tunnel1 -ll 169.254.6.2/30 -lr 169.254.6.1/30 -m 100 -r <VPC CIDR>"
-		```
-	```console
+
 	conn Tunnel2
 		auto=start
 		left=%defaultroute
