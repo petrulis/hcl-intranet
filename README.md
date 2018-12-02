@@ -86,7 +86,8 @@ This guide is only relevant for Linux environments with strongswan.
 		dpddelay=10s
 		dpdtimeout=30s
 		dpdaction=restart
-		leftupdown="/etc/ipsec.d/aws-updown.sh -ln Tunnel1 -ll 169.254.7.2/30 -lr 169.254.7.1/30 -m 100 -r <VPC CIDR>"
+		mark=200
+		leftupdown="/etc/ipsec.d/aws-updown.sh -ln Tunnel1 -ll 169.254.7.2/30 -lr 169.254.7.1/30 -m 200 -r <VPC CIDR>"
 		```
 4) Create a new file at /etc/ipsec.secrets if it doesn't already exist, and append this line to the file. This value authenticates the tunnel endpoints:
 	```console
