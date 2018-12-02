@@ -11,6 +11,74 @@ Parameters:
   TunnelInsideCidr2:
     Type: String
     Default: 169.254.7.0/30
+  ApplicationPort:
+    Type: Number
+    Default: 443
+  CertificateArn:
+    Type: String
+  SpotPrice:
+    Type: Number
+    Default: 0.008
+  KeyName:
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Description: >-
+      Select ssh key from a list which will be used to access ec2 instances over
+      ssh
+  EC2InstanceType:
+    Type: String
+    AllowedValues:
+      - t2.micro
+      - t2.medium
+      - t2.large
+    Default: t2.micro
+    Description: Enter instance type eg. t2.medium or t2.micro
+  ApplicationImageId:
+    Type: AWS::EC2::Image::Id
+    Description: API service AMI identifier.
+  MinFleetSize:
+    Type: Number
+    Default: 3
+  MaxFleetSize:
+    Type: Number
+    Default: 9
+  DesiredFleetCapacity:
+    Type: Number
+    Default: 3
+  TargetTrackingValue:
+    Type: Number
+    Default: 80
+  DbName:
+    Description: The database name
+    Type: String
+    MinLength: '1'
+    MaxLength: '8'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+    Default: master
+  DbMasterUsername:
+    NoEcho: 'true'
+    Description: The database admin account username
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DbMasterPassword:
+    NoEcho: 'true'
+    Description: The database admin account password
+    Type: String
+    MinLength: '8'
+  DbInstanceClass:
+    Default: db.t2.micro
+    Description: Database instance class
+    Type: String
+    AllowedValues:
+      - db.t2.micro
+      - db.m1.small
+      - db.m1.large
+      - db.m1.xlarge
+      - db.m2.xlarge
+    ConstraintDescription: must select a valid database instance type.
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -21,6 +89,25 @@ Metadata:
           - CustomerGatewayBgpASN
           - TunnelInsideCidr1
           - TunnelInsideCidr2
+      - Label:
+          default: Application configuration
+        Parameters:
+          - ApplicationPort
+          - CertificateArn
+          - SpotPrice
+          - KeyName
+          - EC2InstanceType
+          - ApplicationImageId
+          - MinFleetSize
+          - MaxFleetSize
+          - DesiredFleetCapacity
+      - Label:
+          default: Database configuration
+        Parameters:
+          - DbName
+          - DbMasterUsername
+          - DbMasterPassword
+          - DbInstanceClass
 Resources:
   Vpc:
     Type: 'AWS::EC2::VPC'
@@ -161,7 +248,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          SourceSecurityGroupId: 
+          SourceSecurityGroupId:
             Fn::GetAtt:
               - LoadBalancerSecurityGroup
               - GroupId
@@ -187,6 +274,170 @@ Resources:
         - Key: stack-name
           Value:
             Fn::Sub: ${AWS::StackName}
+  TargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckProtocol: HTTPS
+      Port:
+        Ref: ApplicationPort
+      Protocol: HTTPS
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 2
+      VpcId:
+        Ref: Vpc
+  Listener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroup
+      LoadBalancerArn:
+        Ref: LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn:
+            Ref: CertificateArn
+  ParameterGroup:
+    Type: 'AWS::RDS::DBParameterGroup'
+    Properties:
+      Description: Postgres parameter group
+      Family: postgres9.6
+      Parameters:
+        timezone: Europe/Vilnius
+  DbSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: Postgres subnet group
+      SubnetIds:
+        - Ref: PrivateSubnetA
+        - Ref: PrivateSubnetB
+        - Ref: PrivateSubnetC
+  DbSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow postgres connection
+      VpcId:
+        Ref: Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: 
+            Fn::GetAtt:
+              - EC2SecurityGroup
+              - GroupId
+  DbInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBName:
+        Ref: DbName
+      DBInstanceClass:
+        Ref: DbInstanceClass
+      DBParameterGroupName:
+        Ref: ParameterGroup
+      AllocatedStorage: 8
+      Engine: postgres
+      EngineVersion: 9.6.9
+      MasterUsername:
+        Ref: DbMasterUsername
+      MasterUserPassword:
+        Ref: DbMasterPassword
+      DBSubnetGroupName:
+        Ref: DbSubnetGroup
+      VPCSecurityGroups:
+        - Ref: DbSecurityGroup
+      PubliclyAccessible: false
+      MultiAZ: true
+      StorageType: gp2
+    DeletionPolicy: Snapshot
+  EC2InstanceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: logs
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              Effect: Allow
+              Action:
+                - 'logs:*'
+              Resource: '*'
+  EC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - Ref: EC2InstanceRole
+  LaunchConfiguration:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Properties:
+      ImageId:
+        Ref: ApplicationImageId
+      InstanceType:
+        Ref: EC2InstanceType
+      AssociatePublicIpAddress: false
+      KeyName:
+        Ref: KeyName
+      SecurityGroups:
+        - Ref: EC2SecurityGroup
+      IamInstanceProfile:
+        Ref: EC2InstanceProfile
+      SpotPrice:
+        Ref: SpotPrice
+  AutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      Cooldown: '300'
+      DesiredCapacity:
+        Ref: DesiredFleetCapacity
+      HealthCheckGracePeriod: 0
+      HealthCheckType: EC2
+      MaxSize:
+        Ref: MaxFleetSize
+      MinSize:
+        Ref: MinFleetSize
+      LaunchConfigurationName:
+        Ref: LaunchConfiguration
+      MetricsCollection:
+        - Granularity: 1Minute
+      TargetGroupARNs:
+        - Ref: TargetGroup
+      VPCZoneIdentifier:
+        - Ref: PrivateSubnetA
+        - Ref: PrivateSubnetB
+        - Ref: PrivateSubnetC
+      Tags:
+        - Key: stack-name
+          Value:
+            Fn::Sub: ${AWS::StackName}
+          PropagateAtLaunch: true
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 1
+        MinInstancesInService: 0
+        PauseTime: PT1S
+  ScalingPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AutoScalingGroupName:
+        Ref: AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue:
+          Ref: TargetTrackingValue
 Outputs:
   VpcId:
     Value:
