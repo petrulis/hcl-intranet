@@ -38,6 +38,7 @@ Parameters:
   ApplicationImageId:
     Type: AWS::EC2::Image::Id
     Description: API service AMI identifier.
+    Default: ami-0e9340ed1e104860d
   MinFleetSize:
     Type: Number
     Default: 3
