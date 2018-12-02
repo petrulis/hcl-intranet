@@ -1,0 +1,220 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  CustomerGatewayIpAddress:
+    Type: String
+  CustomerGatewayBgpASN:
+    Type: Number
+    Default: 64000
+  TunnelInsideCidr1:
+    Type: String
+    Default: 169.254.6.0/30
+  TunnelInsideCidr2:
+    Type: String
+    Default: 169.254.7.0/30
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Vpn Connection configuration
+        Parameters:
+          - CustomerGatewayIpAddress
+          - CustomerGatewayBgpASN
+          - TunnelInsideCidr1
+          - TunnelInsideCidr2
+Resources:
+  Vpc:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      CidrBlock: 172.0.0.0/16
+  PrivateSubnetA:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId:
+        Ref: Vpc
+      CidrBlock: 172.0.1.0/24
+      AvailabilityZone: eu-west-1a
+  PrivateSubnetB:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId:
+        Ref: Vpc
+      CidrBlock: 172.0.2.0/24
+      AvailabilityZone: eu-west-1b
+  PrivateSubnetC:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId:
+        Ref: Vpc
+      CidrBlock: 172.0.3.0/24
+      AvailabilityZone: eu-west-1c
+  VpnCustomerGateway:
+    Type: 'AWS::EC2::CustomerGateway'
+    Properties:
+      Type: ipsec.1
+      IpAddress:
+        Ref: CustomerGatewayIpAddress
+      BgpAsn:
+        Ref: CustomerGatewayBgpASN
+  VpnGateway:
+    Type: 'AWS::EC2::VPNGateway'
+    Properties:
+      Type: ipsec.1
+  VpnConnection:
+    Type: 'AWS::EC2::VPNConnection'
+    Properties:
+      Type: ipsec.1
+      CustomerGatewayId:
+        Ref: VpnCustomerGateway
+      StaticRoutesOnly: true
+      VpnGatewayId:
+        Ref: VpnGateway
+      VpnTunnelOptionsSpecifications:
+        - TunnelInsideCidr:
+            Ref: TunnelInsideCidr1
+        - TunnelInsideCidr:
+            Ref: TunnelInsideCidr2
+  VpnConnectionRoute1:
+    Type: 'AWS::EC2::VPNConnectionRoute'
+    Properties:
+      DestinationCidrBlock:
+        Ref: TunnelInsideCidr1
+      VpnConnectionId:
+        Ref: VpnConnection
+  VpnConnectionRoute2:
+    Type: 'AWS::EC2::VPNConnectionRoute'
+    Properties:
+      DestinationCidrBlock:
+        Ref: TunnelInsideCidr2
+      VpnConnectionId:
+        Ref: VpnConnection
+  VpnGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId:
+        Ref: Vpc
+      VpnGatewayId:
+        Ref: VpnGateway
+  RouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId:
+        Ref: Vpc
+  RouteTableAssociationA:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId:
+        Ref: RouteTable
+      SubnetId:
+        Ref: PrivateSubnetA
+  RouteTableAssociationB:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId:
+        Ref: RouteTable
+      SubnetId:
+        Ref: PrivateSubnetB
+  RouteTableAssociationC:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId:
+        Ref: RouteTable
+      SubnetId:
+        Ref: PrivateSubnetC
+  VpnGatewayRoutePropagation:
+    Type: 'AWS::EC2::VPNGatewayRoutePropagation'
+    Properties:
+      RouteTableIds:
+        - Ref: RouteTable
+      VpnGatewayId:
+        Ref: VpnGateway
+  LoadBalancerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow https access
+      VpcId:
+        Ref: Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp:
+            Ref: TunnelInsideCidr1
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp:
+            Ref: TunnelInsideCidr2
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+  EC2SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow http(s) to client host
+      VpcId:
+        Ref: Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: 
+            Fn::GetAtt:
+              - LoadBalancerSecurityGroup
+              - GroupId
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: 
+            Fn::GetAtt:
+              - LoadBalancerSecurityGroup
+              - GroupId
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Type: 'application'
+      Scheme: 'internal'
+      Subnets:
+        - Ref: PrivateSubnetA
+        - Ref: PrivateSubnetB
+        - Ref: PrivateSubnetC
+      SecurityGroups:
+        - Ref: LoadBalancerSecurityGroup
+      Tags:
+        - Key: stack-name
+          Value:
+            Fn::Sub: ${AWS::StackName}
+Outputs:
+  VpcId:
+    Value:
+      Ref: Vpc
+    Export:
+      Name:
+        Fn::Sub: '${AWS::StackName}-Vpc'
+  StackName:
+    Value:
+      Fn::Sub: '${AWS::StackName}'
+    Export:
+      Name:
+        Fn::Sub: '${AWS::StackName}-StackName'
+  PrivateSubnetA:
+    Value:
+      Ref: PrivateSubnetA
+    Export:
+      Name:
+        Fn::Sub: '${AWS::StackName}-PrivateSubnetA'
+  PrivateSubnetB:
+    Value:
+      Ref: PrivateSubnetB
+    Export:
+      Name:
+        Fn::Sub: '${AWS::StackName}-PrivateSubnetB'
+  PrivateSubnetC:
+    Value:
+      Ref: PrivateSubnetC
+    Export:
+      Name:
+        Fn::Sub: '${AWS::StackName}-PrivateSubnetC'
