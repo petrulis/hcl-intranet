@@ -92,7 +92,7 @@ This guide is only relevant for Linux environments with strongswan.
 4) Create a new file at /etc/ipsec.secrets if it doesn't already exist, and append this line to the file. This value authenticates the tunnel endpoints:
 	```console
 	<PUBLIC_IP> <TUNNEL1_OUTSIDE_IP> : PSK "<SECRET1>"
-	<PUBLIC_IP> <TUNNEL1_OUTSIDE_IP> : PSK "<SECRET2>"
+	<PUBLIC_IP> <TUNNEL2_OUTSIDE_IP> : PSK "<SECRET2>"
 	```
 
 5. Create a file at /etc/ipsec.d/aws-updown.sh and append file contents from aws-updown.sh.
