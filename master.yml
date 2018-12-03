@@ -2,6 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   CustomerGatewayIpAddress:
     Type: String
+    Description: >-
+      This is your customer gateway or router external IP address.
+      You can find your external IP by executing curl ifconfig.me on Linux.
   CustomerGatewayBgpASN:
     Type: Number
     Default: 64000
