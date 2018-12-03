@@ -11,7 +11,7 @@ accesible only over ipsec.1 VPN connection over hclintranet.com domain.
 
 ### Import master.yml into CloudFormation
 
-Before importing cloudoformation template ask yourself whether you already own intranet domain or
+Before importing cloudformation template ask yourself whether you already own intranet domain or
 you want to create private hosted zone instead. If you own the domain, keep in mind that CloudFormation will
 try to provision HostedZone for it and that you will have to provision ACM certificate for it and set
 its ARN as CertificateARN
