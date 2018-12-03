@@ -22,6 +22,7 @@ Parameters:
     Default: 80
   CertificateArn:
     Type: String
+    Description: Certificate for HTTPS Listener.
   SpotPrice:
     Type: Number
     Default: 0.008
