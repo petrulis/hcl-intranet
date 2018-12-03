@@ -13,10 +13,10 @@ Parameters:
     Default: 169.254.7.0/30
   HostedZoneName:
     Type: String
-    Default: hcl.intranet
+    Default: hclintranet.com
   ApplicationPort:
     Type: Number
-    Default: 443
+    Default: 80
   CertificateArn:
     Type: String
   SpotPrice:
@@ -85,21 +85,21 @@ Parameters:
     ConstraintDescription: must select a valid database instance type.
   DirectoryPassword:
     Type: String
-    Default: Password1234++
+    NoEcho: 'true'
     Description: >-
       SimpelAD directory password. SimpleAD is used to resolve private DNS hostnames.
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: Vpn Connection configuration
+          default: Vpn Connection Configuration
         Parameters:
           - CustomerGatewayIpAddress
           - CustomerGatewayBgpASN
           - TunnelInsideCidr1
           - TunnelInsideCidr2
       - Label:
-          default: Application configuration
+          default: Application Configuration
         Parameters:
           - HostedZoneName
           - ApplicationPort
@@ -111,6 +111,7 @@ Metadata:
           - MinFleetSize
           - MaxFleetSize
           - DesiredFleetCapacity
+          - TargetTrackingValue
       - Label:
           default: Database configuration
         Parameters:
@@ -118,6 +119,10 @@ Metadata:
           - DbMasterUsername
           - DbMasterPassword
           - DbInstanceClass
+      - Label:
+          default: Directory Service Configuration
+        Parameters:
+          - DirectoryPassword
 Resources:
   Vpc:
     Type: 'AWS::EC2::VPC'
