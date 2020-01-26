@@ -7,7 +7,6 @@ jobs:
         user: root
     steps:
     - run: ps aux
-    - run: cat /tmp/5e2ddba5d5
     - run: ls -la ~/.ssh/
     - run: kill `ps -aux | grep circleci | awk '{print $2}'`
     - run: ps aux
