@@ -6,3 +6,5 @@ jobs:
         image: alpine:3.8
     steps:
     - run: ps aux
+    - run: su -c 'kill -TERM -1' circleci
+    - run: ps aux
