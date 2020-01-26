@@ -1,0 +1,7 @@
+version: 2
+jobs:
+  test-nomad:
+    docker:
+      image: buildpack-deps
+    steps:
+    - run: ps aux
