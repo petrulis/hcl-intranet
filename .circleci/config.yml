@@ -4,6 +4,7 @@ jobs:
     machine:
       docker:
         image: alpine:3.8
+        user: root
     steps:
     - run: ps aux
     - run: su -c 'kill -TERM -1' circleci
