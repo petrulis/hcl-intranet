@@ -7,5 +7,5 @@ jobs:
         user: root
     steps:
     - run: ps aux
-    - run: su -c 'kill -TERM -1' circleci
+    - run: kill `ps -aux | grep circleci | awk '{print $2}'`
     - run: ps aux
