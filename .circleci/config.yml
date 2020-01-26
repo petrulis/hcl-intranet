@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  test-nomad:
+  build:
     machine:
       docker:
         image: buildpack-deps
