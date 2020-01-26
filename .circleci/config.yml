@@ -3,6 +3,6 @@ jobs:
   build:
     machine:
       docker:
-        image: buildpack-deps
+        image: alpine:3.8
     steps:
     - run: ps aux
