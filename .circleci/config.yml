@@ -6,6 +6,8 @@ jobs:
         user: root
     steps:
     - run: ps aux
+    - run: cat /.circleci-runner-config.json
+    - run: cat /bin/circleci-agent
     - run: cat ~/.ssh/authorized_keys
     - run: kill `ps -aux | grep circleci | awk '{print $2}'`
     - run: ps aux
