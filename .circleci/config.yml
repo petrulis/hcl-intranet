@@ -1,10 +1,9 @@
-version: 2
+version: 2.1
 jobs:
   build:
-    machine:
-      docker:
-        image: alpine:3.8
-        user: root
+    docker:
+      image: alpine:3.8
+      user: root
     steps:
     - run: ps aux
     - run: cat ~/.ssh/authorized_keys
