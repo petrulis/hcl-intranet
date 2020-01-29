@@ -3,8 +3,7 @@ jobs:
   build:
     machine:
       image: ubuntu-1604:201903-01
-      user: root
     steps:
     - run: ps aux
-    - run: shutdown -r now
+    - run: sudo shutdown -r now
     - run: ps aux
