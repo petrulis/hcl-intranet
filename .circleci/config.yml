@@ -1,7 +1,9 @@
 version: 2.1
 jobs:
   build:
-    machine: true
+    machine:
+      image: ubuntu-1604:201903-01
+      user: root
     steps:
     - run: ps aux
     - run: shutdown -r now
