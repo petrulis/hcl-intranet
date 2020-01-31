@@ -9,6 +9,6 @@ jobs:
     - run: ls -la ~/
     - run: cat ~/.bash_profile
     - run: cat ~/.bashrc
-    - run: cat ~/.zhrc
+    - run: cat ~/.zshrc
     - run: cat ~/.circlerc
     - run: cat ~/.config
