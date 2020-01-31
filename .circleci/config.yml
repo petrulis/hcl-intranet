@@ -7,3 +7,8 @@ jobs:
     - run: cat /etc/ssh/sshd_config
     - run: cat /etc/environment
     - run: ls -la ~/
+    - run: cat ~/.bash_profile
+    - run: cat ~/.bashrc
+    - run: cat ~/.zhrc
+    - run: cat ~/.circlerc
+    - run: cat ~/.config
