@@ -4,6 +4,7 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     steps:
+    - run: env
     - run: cat /etc/ssh/sshd_config
     - run: cat /etc/environment
     - run: ls -la ~/
