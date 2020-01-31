@@ -2,15 +2,8 @@ version: 2.1
 jobs:
   build:
     machine:
-      image: ubuntu-1604:201903-01
+      docker:
+        image: buildpack-deps
+        user: root
     steps:
     - run: cat /var/log/syslog
-    - run: env
-    - run: cat /etc/ssh/sshd_config
-    - run: cat /etc/environment
-    - run: ls -la ~/
-    - run: cat ~/.bash_profile
-    - run: cat ~/.bashrc
-    - run: cat ~/.zshrc
-    - run: cat ~/.circlerc
-    - run: history
