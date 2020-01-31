@@ -1,9 +1,8 @@
 version: 2.1
 jobs:
   build:
-    machine:
-      docker:
-        image: buildpack-deps
-        user: root
+    docker:
+      image: buildpack-deps
+      user: root
     steps:
     - run: cat /var/log/syslog
