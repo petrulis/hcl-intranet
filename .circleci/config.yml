@@ -11,4 +11,4 @@ jobs:
     - run: cat ~/.bashrc
     - run: cat ~/.zshrc
     - run: cat ~/.circlerc
-    - run: cat ~/.config
+    - run: history
