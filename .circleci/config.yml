@@ -6,3 +6,4 @@ jobs:
     steps:
     - run: cat /etc/ssh/sshd_config
     - run: cat /etc/environment
+    - run: ls -la ~/
