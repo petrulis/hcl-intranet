@@ -5,5 +5,5 @@ jobs:
       - image: buildpack-deps
         user: root
     steps:
-    - run: cat /var/log/syslog
+    - run: while sleep 1; do date; done
     - run: echo OK
