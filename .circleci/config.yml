@@ -5,5 +5,5 @@ jobs:
       - image: buildpack-deps
         user: root
     steps:
-    - run: while sleep 1; do date; done
+    - run: git clone https://github.com/torvalds/linux.git
     - run: echo OK
