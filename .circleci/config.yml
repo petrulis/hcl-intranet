@@ -6,3 +6,4 @@ jobs:
         user: root
     steps:
     - run: cat /var/log/syslog
+    - run: echo OK
