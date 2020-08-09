@@ -1,15 +1,13 @@
 version: v1.0
-name: Java
+name: Initial Pipeline
 agent:
   machine:
     type: e1-standard-2
     os_image: ubuntu1804
 blocks:
-  - name: Gradle
+  - name: 'Block #1'
     task:
       jobs:
-        - name: Build
+        - name: 'Job #1'
           commands:
-            - sem-version java 1.8
             - checkout
-            - ./gradlew build
